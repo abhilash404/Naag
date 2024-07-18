@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::io::Error;
+use std::io::{self, BufRead, Error};
 use std::process::exit;
 
 fn run(_contents: &str) -> Result<(), String> {
@@ -15,9 +15,17 @@ fn run_file(path: &str) -> Result<(), Error> {
     }
 }
 
-fn run_prompt() {
-    // Implementation for running in interactive mode (prompt)
-    println!("Running in prompt mode...");
+fn run_prompt() -> Result<(), String> {
+    print!("> ");
+    let mut buffer = String::new();
+    let stdin = io::stdin();
+    let mut handle = stdin.lock();
+    match handle.read_line(&mut buffer) {
+        Ok(_) => (),
+        Err(_) => return Err("Couldn't read line".to_string()),
+    }
+    println!("You wrote: {}", buffer);
+    Ok(())
 }
 
 fn main() {
@@ -35,7 +43,13 @@ fn main() {
             }
         }
     } else {
-        run_prompt();
+        match run_prompt() {
+            Ok(_) => (),
+            Err(msg) => {
+                eprintln!("Error:\n{}", msg);
+                exit(1);
+            }
+        }
     }
 
     dbg!(args);
