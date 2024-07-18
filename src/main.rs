@@ -1,10 +1,18 @@
+mod scanner;
+use crate::scanner::{Scanner, Token};
+
 use std::env;
 use std::fs;
 use std::io::{self, BufRead, Error};
 use std::process::exit;
 
-fn run(_contents: &str) -> Result<(), String> {
-    Err("Not implemented".to_string())
+fn run(contents: &str) -> Result<(), String> {
+    let scanner = Scanner::new(contents); // Initialize with content
+    let tokens = scanner.scan_tokens()?;
+    for token in tokens {
+        println!("{:?}", token);
+    }
+    Ok(())
 }
 
 fn run_file(path: &str) -> Result<(), Error> {
@@ -16,21 +24,31 @@ fn run_file(path: &str) -> Result<(), Error> {
 }
 
 fn run_prompt() -> Result<(), String> {
-    print!("> ");
-    let mut buffer = String::new();
-    let stdin = io::stdin();
-    let mut handle = stdin.lock();
-    match handle.read_line(&mut buffer) {
-        Ok(_) => (),
-        Err(_) => return Err("Couldn't read line".to_string()),
+    loop {
+        print!("> ");
+        let mut buffer = String::new();
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
+        match handle.read_line(&mut buffer) {
+            Ok(n) => {
+                println!("n={}", n);
+                if n <= 2 {
+                    return Ok(());
+                }
+            }
+            Err(_) => return Err("Couldn't read line".to_string()),
+        }
+        println!("ECHO: {}", buffer);
+        match run(&buffer){
+            Ok(_)=>(),
+            Err(msg)=> println!("{}",msg),
+        }
     }
-    println!("You wrote: {}", buffer);
-    Ok(())
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
+
     if args.len() > 2 {
         println!("Usage: jlox [script]");
         exit(64);
