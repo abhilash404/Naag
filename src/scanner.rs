@@ -65,9 +65,75 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
+
+            '!' => {
+                let token = if self.char_match('=') {
+                    TokenType::BangEqual
+                } else {
+                    TokenType::Bang
+                };
+                self.add_token(token);
+            }
+
+            '=' => {
+                let token = if self.char_match('=') {
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                };
+                self.add_token(token);
+            }
+
+            '<' => {
+                let token = if self.char_match('=') {
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Less
+                };
+                self.add_token(token);
+            }
+
+            '>' => {
+                let token = if self.char_match('=') {
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Greater
+                };
+                self.add_token(token);
+            }
+            '/' => {
+                if self.char_match('/') {
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash);
+                }
+            }
+            ' ' | '\r' | '\t' => {}
+            '\n' => self.line += 1,
             _ => return Err(format!("unrecognized char at line {}: {}", self.line, c)),
         }
         Ok(())
+    }
+
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            return '\0';
+        }
+        self.source.as_bytes()[self.current] as char
+    }
+
+    fn char_match(&mut self, expected: char) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        if self.source.as_bytes()[self.current] as char != expected {
+            return false;
+        } else {
+            self.current += 1;
+            return true;
+        }
     }
 
     fn advance(&mut self) -> char {
@@ -91,7 +157,7 @@ impl Scanner {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single character tokens
     LeftParen,
@@ -131,7 +197,7 @@ pub enum TokenType {
     For,
     Chap,    // Print
     Wapas,   // Return
-    Supper,
+    Supper,  // Super
     Sach,    // True
     Jhoot,   // False
     This,
@@ -181,3 +247,5 @@ impl Token {
         format!("{} {} {:?}", self.token_type, self.lexeme, self.literal)
     }
 }
+
+
