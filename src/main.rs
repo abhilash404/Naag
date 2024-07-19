@@ -7,7 +7,7 @@ use std::io::{self, BufRead, Error};
 use std::process::exit;
 
 fn run(contents: &str) -> Result<(), String> {
-    let scanner = Scanner::new(contents); // Initialize with content
+    let mut scanner = Scanner::new(contents); // Initialize with content
     let tokens = scanner.scan_tokens()?;
     for token in tokens {
         println!("{:?}", token);
