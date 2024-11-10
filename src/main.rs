@@ -3,11 +3,11 @@ use crate::scanner::{Scanner, Token};
 
 use std::env;
 use std::fs;
-use std::io::{self, BufRead, Error};
+use std::io::{self, BufRead, Write, Error};
 use std::process::exit;
 
 fn run(contents: &str) -> Result<(), String> {
-    let mut scanner = Scanner::new(contents); // Initialize with content
+    let mut scanner = Scanner::new(contents);
     let tokens = scanner.scan_tokens()?;
     for token in tokens {
         println!("{:?}", token);
@@ -26,22 +26,21 @@ fn run_file(path: &str) -> Result<(), Error> {
 fn run_prompt() -> Result<(), String> {
     loop {
         print!("> ");
+        io::stdout().flush().expect("Failed to flush stdout");  // Ensure prompt is shown
         let mut buffer = String::new();
         let stdin = io::stdin();
         let mut handle = stdin.lock();
         match handle.read_line(&mut buffer) {
             Ok(n) => {
-                println!("n={}", n);
-                if n <= 2 {
+                if n <= 2 { // Exit on empty input or newline
                     return Ok(());
                 }
             }
             Err(_) => return Err("Couldn't read line".to_string()),
         }
-        println!("ECHO: {}", buffer);
-        match run(&buffer){
-            Ok(_)=>(),
-            Err(msg)=> println!("{}",msg),
+        match run(&buffer) {
+            Ok(_) => (),
+            Err(msg) => println!("{}", msg),
         }
     }
 }
@@ -69,6 +68,4 @@ fn main() {
             }
         }
     }
-
-    dbg!(args);
 }

@@ -2,7 +2,7 @@ use std::fmt;
 use std::string::String;
 
 pub struct Scanner {
-    source: String,
+    source: Vec<char>,
     tokens: Vec<Token>,
     start: usize,
     current: usize,
@@ -10,10 +10,10 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn new(source: &str) -> Self {
-        Self {
-            source: source.to_string(),
-            tokens: vec![],
+    pub fn new(source: &str) -> Scanner {
+        Scanner {
+            source: source.chars().collect(),
+            tokens: Vec::new(),
             start: 0,
             current: 0,
             line: 1,
@@ -112,8 +112,28 @@ impl Scanner {
             }
             ' ' | '\r' | '\t' => {}
             '\n' => self.line += 1,
+            '"' => self.string()?,
             _ => return Err(format!("unrecognized char at line {}: {}", self.line, c)),
         }
+        Ok(())
+    }
+
+    fn string(&mut self) -> Result<(), String> {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+        if self.is_at_end() {
+            return Err("unterminated string".to_string());
+        }
+        self.advance();
+
+        let value = self.source[self.start + 1..self.current - 1]
+            .iter()
+            .collect::<String>();
+        self.add_token_lit(TokenType::String, Some(LiteralValue::StringValue(value)));
         Ok(())
     }
 
@@ -121,14 +141,14 @@ impl Scanner {
         if self.is_at_end() {
             return '\0';
         }
-        self.source.as_bytes()[self.current] as char
+        self.source[self.current]
     }
 
     fn char_match(&mut self, expected: char) -> bool {
         if self.is_at_end() {
             return false;
         }
-        if self.source.as_bytes()[self.current] as char != expected {
+        if self.source[self.current] != expected {
             return false;
         } else {
             self.current += 1;
@@ -137,17 +157,17 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> char {
-        let c = self.source.as_bytes()[self.current];
+        let c = self.source[self.current];
         self.current += 1;
-        c as char
+        c
     }
 
     fn add_token(&mut self, token_type: TokenType) {
         self.add_token_lit(token_type, None);
     }
 
-    fn add_token_lit(&mut self, token_type: TokenType, literal: Option<LiteralVal>) {
-        let text: String = self.source[self.start..self.current].chars().collect();
+    fn add_token_lit(&mut self, token_type: TokenType, literal: Option<LiteralValue>) {
+        let text: String = self.source[self.start..self.current].iter().collect();
         self.tokens.push(Token {
             token_type,
             lexeme: text,
@@ -190,19 +210,19 @@ pub enum TokenType {
     // Keywords
     And,
     Class,
-    Warna,   // Else
-    Agar,    // If
-    Nope,    // Nil
+    Else,
+    If,
+    Nil,
     Or,
     For,
-    Chap,    // Print
-    Wapas,   // Return
-    Supper,  // Super
-    Sach,    // True
-    Jhoot,   // False
+    Print,
+    Return,
+    Super,
+    True,
+    False,
     This,
     Var,
-    Jabtak,  // While
+    While,
     Eof,
 }
 
@@ -213,7 +233,7 @@ impl fmt::Display for TokenType {
 }
 
 #[derive(Debug, Clone)]
-pub enum LiteralVal {
+pub enum LiteralValue {
     IntValue(i64),
     FValue(f64),
     StringValue(String),
@@ -224,7 +244,7 @@ pub enum LiteralVal {
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: Option<LiteralVal>,
+    literal: Option<LiteralValue>,
     line_number: i64,
 }
 
@@ -232,7 +252,7 @@ impl Token {
     pub fn new(
         token_type: TokenType,
         lexeme: String,
-        literal: Option<LiteralVal>,
+        literal: Option<LiteralValue>,
         line_number: i64,
     ) -> Self {
         Self {
@@ -247,5 +267,3 @@ impl Token {
         format!("{} {} {:?}", self.token_type, self.lexeme, self.literal)
     }
 }
-
-
