@@ -1,5 +1,6 @@
 mod scanner;
-use crate::scanner::{Scanner, Token};
+use naag::scanner::{Scanner, TokenType};
+
 
 use std::env;
 use std::fs;
